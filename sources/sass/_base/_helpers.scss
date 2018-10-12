@@ -1,0 +1,79 @@
+// HELPERS
+// ----------------------
+
+// =============================
+// 1. Pseudo 
+// 2. Flex
+// 3. Transition
+// 4. Position
+// 5. Special
+// 6. Images
+// 7. Boxes
+// ================================
+
+// 1. Pseudo elements 
+// ----------------------------
+%pseudo {
+	&--absolute {
+		content: "";
+		position: absolute;
+	}
+	&--block {
+		content: "";
+		display: block;	
+	}
+	&--inline {
+		content: "";
+		display: inline-block;
+	}
+}
+
+// 2. Flex
+// --------------------------
+
+%fx {
+	display: flex;
+	flex-wrap: wrap;
+	&--between {
+		justify-content: space-between;
+	}
+	&--center {
+		justify-content: center;	
+	}
+	&--around {
+		justify-content: space-around;
+	}
+	&--end {
+		justify-content: flex-end;
+	}
+	&--nowrap {
+		flex-wrap: nowrap;
+	}
+	&--column {
+		flex-direction: column;
+	}
+}
+
+%al {
+	&--center {
+		align-items: center;
+	}
+	&--end {
+		align-items: flex-end;
+	}
+	&--top {
+		align-items: flex-start;
+	}
+}
+
+
+// 3. Transitions
+// --------------------------------
+%transition {
+	&--all {
+		transition: all .1s ease-in-out;
+		&-3s {
+			transition: all .3s ease-in-out;
+		}	
+	}
+}

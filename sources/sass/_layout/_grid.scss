@@ -1,0 +1,32 @@
+// GRID 
+// -----------------------
+
+// 1. Flex grid
+// ------------------------------
+.fx {
+	@extend %fx;
+	&.-nowrap {
+		@extend %fx--nowrap;
+	}
+	&.-col {
+		@extend %fx--column;	
+	}
+	&.-bt {
+		@extend %fx--between;
+	}
+	&.-cn {
+		@extend %fx--center;
+	}
+	&.-ar {
+		@extend %fx--around;
+	}
+	&.-md {
+		@extend %al--center;	
+	}
+	&.-start {
+		@extend %al--top;	
+	}
+	&.-end {
+		@extend %al--end;
+	}
+}
