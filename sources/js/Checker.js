@@ -81,7 +81,7 @@ class Checker {
 		// FOOTER
 		footer = `
 			<div id="${t.footer.id}">
-				<input type="button" id="${t.add.id}" value="${t.add.text}"/>
+				<input type="button" id="${t.add.id}" value="${t.add.text}" disabled/>
 				
 				${ f ? 
 					`
@@ -108,7 +108,7 @@ class Checker {
 
 				<div>
 					<div id="${t.reset.id}">${t.reset.text}</div>
-					<input id="${t.submit.id}" type="submit" value="${t.submit.text}"/>
+					<input id="${t.submit.id}" type="submit" value="${t.submit.text}" disabled/>
 				</div>
 
 			</div>
@@ -309,6 +309,7 @@ class Checker {
 				inputs.forEach((input) => {
 					input.addEventListener('input', () => {
 						this.fillLine(index, 'reset');
+						this.checkLine();
 					})
 				});
 			});
@@ -322,6 +323,9 @@ class Checker {
 
 		// Set current index
 		this.currentIndex += 1;
+		
+		// Check if line is valid
+		this.checkLine();
 	}
 
 	checkRemoveButtons(){
@@ -380,25 +384,31 @@ class Checker {
 		const line = this.selectors.lines.querySelectorAll('.line')[index];
 
 		Object.keys(this.balls).map((key, i) => {
-
+			
 			if(action === 'reset') this.lines[index].result[key] = [];
+			let arr = this.lines[index].result[key];
 
-			let tags = [...line.querySelector('.numbers').querySelectorAll('ul')[i].querySelectorAll(mode === 'inline' ? `input` : `span`)];
+			let tags = 	[...line.querySelector('.numbers')
+							.querySelectorAll('ul')[i]
+							.querySelectorAll(mode === 'inline' ? `input` : `span`)
+						];
+
 			tags.forEach((tag, n) => {
-
+				
 				let value;
 
 				if(action === 'insert') {
-					value = this.lines[index].result[key][n];
+					value = arr[n];
 					tag[mode === 'inline' ? 'value' : 'innerHTML'] = value !== undefined ? value : ``;
 				} else {
 					value = tag[mode === 'inline' ? 'value' : 'innerHTML'];
-					if( value !== "" ) this.lines[index].result[key].push(value); 
+					if( value !== "") {
+						this.lines[index].result[key].push(value);
+					}
 				}
 
 			});
 		});
-
 	}
 
 
@@ -429,17 +439,55 @@ class Checker {
 	checkLine(){
 
 		const i = this.currentIndex - 1;
-		
-		let isValid = false;
+
 		const line = this.lines[i];
 
-		Object.keys(line.result).map((key, index)=>{
-			// Line is completed
-			console.log(key);
+		let tempArr = [];
+		let obj = {};
 
+		// Check balls
+		// ---------------------------
+		Object.keys(this.balls).map((key, index) => {
+
+			let isDublicated = this.checkLineDublicates(line.result[key], index);
+
+			// Check length
+			if(!this.balls[key].optional){
+				tempArr.push(
+					line.result[key].length === this.balls[key].select && !isDublicated
+					? true 
+					: false
+				);
+			}
 		});
 
-		return isValid;
+		obj.result = tempArr.every((val, i, arr) => val === true );
+
+		// Object.keys(this.extras).map((key, index) => {
+		// 	// Check extras
+		// 	if(this.extras[key].self){
+		// 		obj[key] = 
+		// 	}
+		// });
+
+
+		// Validate line? 
+		Object.keys(obj).map((key) => {
+ 			this.updateFooter(obj[key] ? true : false);
+			return;
+		});
+	}
+
+	checkLineDublicates(arr, index) {
+		let dublicates = [];
+		arr.forEach((value, i) => {
+			if(arr.indexOf(value, i + 1) > -1) {	
+				if(dublicates.indexOf(value) === -1 ) {
+					dublicates.push(value);
+				}
+			}
+		});
+		return dublicates.length > 0 ? true : false;
 	}
 
 
@@ -596,7 +644,6 @@ class Checker {
 		let i = this.currentIndex - 1;
 		let isChecked = item.checked;
 		grid.style.display = isChecked ? 'block' : 'none';
-		console.log(Object.keys(this.lines[i])[type]);
 		
 		// Remove from lines if unchecked
 		if(!isChecked) {
@@ -604,6 +651,15 @@ class Checker {
 			this.updateGrids();
 			this.fillLine(i, 'insert');
 		}
+	}
+
+
+	// FOOTER
+	// --------------------
+	updateFooter(boolean){
+		const s = this.selectors;
+		s.add.disabled = boolean ? false : true;
+		s.submit.disabled = boolean ? false : true;
 	}
 
 

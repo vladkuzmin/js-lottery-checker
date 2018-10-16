@@ -24,8 +24,7 @@ function init(){
 				pool: 50,
 				select: 5,
 				optional: false,
-				startWith: 0,
-				repeated: 0
+				startWith: 0
 			},
 			powerball: {
 				id: 'checker-grid-powerball',
@@ -34,8 +33,7 @@ function init(){
 				pool: 10,
 				select: 2,
 				optional: false,
-				startWith: 1,
-				repeated: 4
+				startWith: 1
 			},
 			bonus: {
 				id: 'checker-grid-bonus',
@@ -45,8 +43,7 @@ function init(){
 				select: 1,
 				optional: true,
 				label: 'Would you like to add Powerball to your ticker?',
-				startWith: 0,
-				repeated: 0
+				startWith: 0
 			}
 		},
 
