@@ -48,13 +48,13 @@ class Checker {
 
 		// HEADER
 		header = `
-			<div>
+			<div id="${t.header.id}">
 				<h2>${t.header.text}</h2>
 				${ v ? 
 					`
 						<label>
 							<div>${v.label}</div>
-							<input type="checkbox" id="${v.id}"/>
+							<input type="checkbox" id="${v.id}" ${this.defaultView !== v.values[0] ? `checked` : ``}/>
 							${v.values.length > 1 ? 
 								`
 									<div>
@@ -81,7 +81,7 @@ class Checker {
 		// FOOTER
 		footer = `
 			<div id="${t.footer.id}">
-				<div id="${t.add.id}">${t.add.text}</div>
+				<input type="button" id="${t.add.id}" value="${t.add.text}"/>
 				
 				${ f ? 
 					`
@@ -140,15 +140,16 @@ class Checker {
 			});
 		}
 
-
 		// add line
 		// --------------
 		this.selectors.add.addEventListener('click', () => {
 			this.buildLine('add');
 		});
 
-
-
+		this.selectors.reset.addEventListener('click', () => {
+			this.resetLines();
+			this.build();
+		});
 
 		this.view();
 	}
@@ -166,37 +167,6 @@ class Checker {
 		this.render(this.defaultView);
 	}
 
-
-	// INIT LINES
-	// --------------------
-	initLines(){
-		
-		const c = this.cookies;
-		const b = this.balls;
-
-		this.lines = [];
-
-		if (this.isCookies) {
-			Object.keys(c).map((x) => {
-				c[x].map((json)=>{
-
-				});
-			});
-		} else {
-			this.addLine();
-		}
-	}
-
-	addLine(){
-		const b = this.balls;
-		let obj = {}
-		
-		Object.keys(b).map((key) => {
-			obj[key] = [];
-		});
-		this.lines.push(obj);
-	}
-
 	// TEMPLATE
 	// ----------------------
 	render(mode){
@@ -212,16 +182,62 @@ class Checker {
 		s.content.innerHTML = lines + (mode === 'inline' ? '' : grid);
 
 		s.lines = this.getID(t.lines.id);
-		if( mode !== 'inline') {
-			s.grid = this.getID(t.grid.id);
-			this.createGrid(s.grid);
-		}
 
 		this.lines.forEach(() => {
 			this.buildLine();
 		});
+		
+		if( mode !== 'inline') {
+			s.grid = this.getID(t.grid.id);
+			this.createGrids(s.grid);
+		}
 	}
 
+
+	// INIT LINES
+	// --------------------
+	initLines(){
+		
+		const c = this.cookies;
+		const b = this.balls;
+
+		this.lines = [];
+
+		if (this.isCookies) {
+			Object.keys(c).map((x) => {
+				c[x].map((json) => {
+
+				});
+			});
+		} else {
+			this.addLine();
+		}
+	}
+
+	addLine(){
+		const b = this.balls;
+		const ex = this.extras;
+		
+		let obj = {}
+		
+		// Numbers
+		obj.result = {};
+
+		Object.keys(b).map((key) => {
+			obj.result[key] = [];
+		});
+
+		// Extras
+		Object.keys(ex).map((key) => {
+			if(ex[key].input === 'checkbox') {
+				obj[key] = false;
+			} else {
+				obj[key] = "";
+			}
+		});
+
+		this.lines.push(obj);
+	}
 
 	// ADD LINE
 	buildLine(param){
@@ -253,9 +269,7 @@ class Checker {
 								/>
 							`
 							:
-							` 
-								 <span></span>
-							`
+							` <span></span>`
 						}
 					 	</li>
 					 `).join('')}
@@ -282,55 +296,183 @@ class Checker {
 				` 
 				: ``
 			}
-			<div class="remove">x</div>
 		`;
 
 		this.selectors.lines.appendChild(line);
+		this.checkRemoveButtons();
 
+		// Init inputs if mode is inline
+		if(this.defaultView === 'inline') {
+			const types = [...line.querySelector('.numbers').querySelectorAll('ul')];
+			types.forEach((item) => {
+				const inputs = [...item.querySelectorAll('input')];
+				inputs.forEach((input) => {
+					input.addEventListener('input', () => {
+						this.fillLine(index, 'reset');
+					})
+				});
+			});
+		}
 
-		let removeBtn = line.querySelector('.remove');
-		removeBtn.addEventListener('click', () => {
-			this.removeLine(removeBtn, index);
+		this.fillLine(index, 'insert');
+		
+		if(param && this.defaultView !== 'inline') {
+			this.resetGrids();
+		}
+
+		// Set current index
+		this.currentIndex += 1;
+	}
+
+	checkRemoveButtons(){
+
+		let lines = [...this.selectors.lines.querySelectorAll('.line')];
+		let t = this.template.remove;
+		let remove;
+
+		// Clear remove buttons
+		lines.forEach((line) => {
+			remove = line.querySelector(`.${t.class}`);
+			if(remove !== null) {
+				remove.remove();
+			}
 		});
 
-		this.currentIndex += 1;
+		// Re-create remove buttons
+		if(lines.length > 1) {
+			lines.forEach((line, i) => {
+				remove = document.createElement('div');
+				remove.className = t.class;
+				remove.innerHTML = t.text;
+
+				let isRemove = line.querySelector(`.${t.class}`);
+				if( isRemove === null) line.appendChild(remove);
+
+				// add event handler
+				remove.addEventListener('click', () => {
+					this.removeLine(remove, i);
+				});
+			});
+		}
+	}
+
+
+	updateNumbersOnClick(el, action, index, type){
+		
+		let num  = el.innerHTML.replace(/\D+/g, '');
+		let key = Object.keys(this.balls)[type];
+		let arr = this.lines[index].result[key];
+
+		if(action === 'add') {
+			arr.push(num);
+		} else {
+			let removed = arr.indexOf(num);
+			arr.splice(removed, 1);
+		}
+
+		this.fillLine(index, 'insert');
+	}
+
+	
+	fillLine(index, action){
+		
+		const mode = this.defaultView;
+		const line = this.selectors.lines.querySelectorAll('.line')[index];
+
+		Object.keys(this.balls).map((key, i) => {
+
+			if(action === 'reset') this.lines[index].result[key] = [];
+
+			let tags = [...line.querySelector('.numbers').querySelectorAll('ul')[i].querySelectorAll(mode === 'inline' ? `input` : `span`)];
+			tags.forEach((tag, n) => {
+
+				let value;
+
+				if(action === 'insert') {
+					value = this.lines[index].result[key][n];
+					tag[mode === 'inline' ? 'value' : 'innerHTML'] = value !== undefined ? value : ``;
+				} else {
+					value = tag[mode === 'inline' ? 'value' : 'innerHTML'];
+					if( value !== "" ) this.lines[index].result[key].push(value); 
+				}
+
+			});
+		});
 
 	}
 
+
+	resetLines(){
+		this.lines = [];
+		this.addLine();
+	}
+
+
 	removeLine(item, index){
+		
+		const lines = [...this.selectors.lines.querySelectorAll('.line')];
+		
 		item.parentNode.remove();
 		this.lines.splice(index, 1);
 
-		const lines = [...this.selectors.lines.querySelectorAll('.line')];
 		
 		lines.forEach((line, i) => {
 			line.dataset.index = i;
 		});
+
+		this.checkRemoveButtons();
+		this.currentIndex -= 1;
+
+		this.updateGrids();
+	}
+
+	checkLine(){
+
+		const i = this.currentIndex - 1;
+		
+		let isValid = false;
+		const line = this.lines[i];
+
+		Object.keys(line.result).map((key, index)=>{
+			// Line is completed
+			console.log(key);
+
+		});
+
+		return isValid;
 	}
 
 
 	// GRID
 	// ------------------------
-	createGrid(selector){
-		const b = this.balls;
+	createGrids(selector) {
 		
+		const b = this.balls;
+		const i = this.lines.length - 1;
+
 		let grid = `
-			${Object.keys(b).map((key) =>`
+			${Object.keys(b).map((key, index) =>`
 				<div id="${b[key].id}">
 					${b[key].optional ? 
 						`
 							<label>
 								<div>${b[key].label}</div>
-								<input type="checkbox"/>
+								<input type="checkbox" ${this.lines[i].result[key].length > 0 ? `checked` : ``}/>
 							</label>
 						` 
 						: ``
 					}
-					<div class="grid" ${b[key].optional ? `style="display:none;"` : ``}>
+					<div class="grid" 
+						${b[key].optional && this.lines[i].result[key].length === 0 ? 
+							`style="display:none;"` : ``
+						}
+					>
 						<h3>${b[key].text}</h3>
 						<ul>
 							${Array.from(Array(b[key].pool).keys()).map((x)=>`
-								<li>${b[key].startWith !== undefined ? `${x + b[key].startWith}`:`${x + 1}`}</li>
+								<li data-num="${b[key].startWith !== undefined ? `${x + b[key].startWith}`:`${x + 1}`}"							>
+									${b[key].startWith !== undefined ? `${x + b[key].startWith}`:`${x + 1}`}
+								</li>
 							`).join('')}
 						</ul>
 					</div>
@@ -352,7 +494,7 @@ class Checker {
 			
 			items.forEach((item, index) => {
 				item.addEventListener('click', () => {
-					this.addNumber(item, index, type);
+					this.addGridNumber(item, index, type);
 				});
 			});
 
@@ -362,21 +504,106 @@ class Checker {
 				});
 			}
 		});
+
+		this.updateGrids();
 	}
-
-
-	updateGrid(){};
-	resetGrid(){};
 
 
 	// ADD NUMBERS
 	// ------------------
-	addNumber(item, index, type){
-		console.log(index, type);
+	addGridNumber(item, index, type){
+		
+		const i = this.currentIndex - 1;
+		const line = this.selectors.lines.querySelectorAll('.line')[i];
+
+		let status = item.dataset.status;
+		let action;
+
+		// Check if number is already chosen
+		if( status === "selected" ) {
+			item.setAttribute('data-status', "");
+			action = 'remove';
+		} else {
+			item.setAttribute('data-status', "selected");
+			action = 'add';
+		}
+		this.updateNumbersOnClick(item, action, i, type);
+		this.updateGrids();
+		this.checkLine();
 	}
 
+	updateGrids(){
+
+		if(this.defaultView !== 'inline') {
+
+			const i = this.currentIndex - 1;
+			const grids = [...this.selectors.grid.querySelectorAll('ul')];
+			const line = this.lines[i];
+
+			Object.keys(this.balls).map((key, index ) => {
+
+
+				// Show optional selection if exists
+				if(this.balls[key].optional) {
+					
+					let parent = grids[index].parentNode;
+					let checkbox = parent.parentNode.querySelector('label input');
+					
+					if( line.result[key].length > 0 ) {
+						checkbox.checked = true;
+						this.addGrid(checkbox, parent, null);
+					}
+				}
+
+				
+				let nums = [...grids[index].querySelectorAll('li')];
+				
+				nums.forEach((num) => {
+
+					num.classList.remove('is-disabled');
+					num.classList.remove('is-active');
+					num.setAttribute('data-status', '');
+
+					if (line.result[key].length === this.balls[key].select) {
+						num.classList.add('is-disabled');
+						num.setAttribute('data-status', 'disabled');
+					}
+
+					if(line.result[key].indexOf(num.dataset.num) >= 0 ) {
+						num.classList.remove('is-disabled');
+						num.classList.add('is-active');
+						num.setAttribute('data-status', 'selected');
+					}
+				});
+			});
+		}
+	};
+	
+	resetGrids(){
+		const grids = [...this.selectors.grid.querySelectorAll('ul')];
+		grids.forEach((grid, index) => {
+			let nums = [...grid.querySelectorAll('li')];
+			nums.forEach((num)=>{
+				num.removeAttribute('data-status');
+				num.classList.remove('is-active');
+				num.classList.remove('is-disabled');
+			});
+		});
+	};
+
+
 	addGrid(item, grid, type){
-		grid.style.display = item.checked ? 'block' : 'none';
+		let i = this.currentIndex - 1;
+		let isChecked = item.checked;
+		grid.style.display = isChecked ? 'block' : 'none';
+		console.log(Object.keys(this.lines[i])[type]);
+		
+		// Remove from lines if unchecked
+		if(!isChecked) {
+			this.lines[i].result[Object.keys(this.lines[i].result)[type]] = [];
+			this.updateGrids();
+			this.fillLine(i, 'insert');
+		}
 	}
 
 

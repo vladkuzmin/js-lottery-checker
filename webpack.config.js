@@ -1,6 +1,7 @@
 module.exports = {
     mode: 'none',
     watch: true,
+    devtool: "#cheap-module-eval-source-map",
     output: {
         filename: 'app.js',
     },

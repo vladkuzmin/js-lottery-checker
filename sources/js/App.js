@@ -8,7 +8,6 @@ const App = {
 function init(){
 	$.init();
 	new Checker({
-
 		selector: 'checker',
 		views: {
 			id: 'checker-mode',
@@ -55,13 +54,15 @@ function init(){
 			multiplier: {
 				label: 'Multiplier',
 				input: 'checkbox',
-				class: 'checker-multiplier'
+				class: 'checker-multiplier',
+				self: false
 			},
 			raffle: {
 				label: 'Raffle',
 				input: 'text',
 				class: 'checker-raffle',
-				format: 'ABCD12345'
+				format: 'ABCD12345',
+				self: true
 			}
 		},
 
@@ -93,10 +94,16 @@ function init(){
 			},
 			lines: {
 				id: 'checker-lines',
+				class: 'line',
 				text: ''
+			},
+			remove: {
+				class: 'remove',
+				text: 'x'
 			},
 			grid: {
 				id: 'checker-grid',
+				class: 'grid',
 				text: '',
 			},
 			add: {

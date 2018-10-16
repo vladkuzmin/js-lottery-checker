@@ -1,0 +1,87 @@
+// Checker
+// inluding grid and input styles
+
+#checker {
+	position: relative;
+	padding: 20px;
+	background: rgba($black, .1);
+}
+
+#checker-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+#checker-content {
+	background: $white;
+}
+
+#checker-lines {
+	padding: 20px;
+	.line {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	.numbers {
+		display: flex;
+		ul {
+			list-style: none;
+			margin: 0;
+			padding: 0;
+			display: flex;
+			margin: 0 20px 10px 0;
+		}
+		span {
+			display: inline-block;
+			width: 40px;
+			height: 20px;
+			border: 1px solid rgba($black, .2);
+		}
+	}
+	.extras {
+		display: flex;
+		label {
+			display: flex;
+			margin: 0 20px 10px 0;
+		}
+	}
+}
+
+#checker-grid {
+	border-top: 1px solid rgba($black, .2);
+	& > div {
+		margin: 0 0 20px 0;
+	}
+	.grid {
+		ul {
+			list-style: none;
+			margin: 0;
+			left: 0;
+			display: flex;
+			flex-wrap: wrap;
+		}
+		li {
+			padding: 5px 10px;
+			border: 1px solid rgba($black, .1);
+			cursor: pointer;
+			&.is-active {
+				background: $black;
+				color: $white;
+			}
+			&.is-disabled {
+				pointer-events: none;
+				opacity: .2;
+			}
+		}
+	}
+}
+
+#checker-footer {
+	display: flex;
+	justify-content: space-between;
+	& > div {
+		display: flex;
+		align-items: center;
+	}
+}
