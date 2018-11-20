@@ -302,19 +302,9 @@ class Checker {
 		this.checkRemoveButtons();
 
 		// Init inputs if mode is inline
-		if(this.defaultView === 'inline') {
-			const types = [...line.querySelector('.numbers').querySelectorAll('ul')];
-			types.forEach((item) => {
-				const inputs = [...item.querySelectorAll('input')];
-				inputs.forEach((input) => {
-					input.addEventListener('input', () => {
-						this.fillLine(index, 'reset');
-						this.checkLine();
-					})
-				});
-			});
-		}
+		this.updateInputs(line, index);
 
+		// Fill line Elements
 		this.fillLine(index, 'insert');
 		
 		if(param && this.defaultView !== 'inline') {
@@ -377,6 +367,21 @@ class Checker {
 		this.fillLine(index, 'insert');
 	}
 
+	updateInputs(line, index){
+		if(this.defaultView === 'inline') {
+			const types = [...line.querySelector('.numbers').querySelectorAll('ul')];
+			types.forEach((item) => {
+				const inputs = [...item.querySelectorAll('input')];
+				inputs.forEach((input) => {
+					input.addEventListener('input', () => {
+						this.fillLine(index, 'reset');
+						this.checkLine();
+					})
+				});
+			});
+		}
+	}
+
 	
 	fillLine(index, action){
 		
@@ -385,6 +390,9 @@ class Checker {
 
 		Object.keys(this.balls).map((key, i) => {
 			
+			// Remove all dublicates
+			this.lines[index].result[key] = [... new Set(this.lines[index].result[key])];
+
 			if(action === 'reset') this.lines[index].result[key] = [];
 			let arr = this.lines[index].result[key];
 
@@ -418,21 +426,27 @@ class Checker {
 	}
 
 
-	removeLine(item, index){
+	removeLine(item, index) {
 		
-		const lines = [...this.selectors.lines.querySelectorAll('.line')];
-		
-		item.parentNode.remove();
+		// Remove DOMElement and Object
+		this.selectors.lines.querySelectorAll('.line')[index].remove();
 		this.lines.splice(index, 1);
 
-		
+		// Re-count lines
+		let lines = [...this.selectors.lines.querySelectorAll('.line')]
+
+		// Update data indeces
 		lines.forEach((line, i) => {
 			line.dataset.index = i;
+			// this.updateInputs(line, i);
 		});
 
-		this.checkRemoveButtons();
+		// Update current index
 		this.currentIndex -= 1;
 
+		// Add/hide remove buttons
+		this.checkRemoveButtons();
+		this.checkLine();
 		this.updateGrids();
 	}
 
@@ -463,13 +477,6 @@ class Checker {
 
 		obj.result = tempArr.every((val, i, arr) => val === true );
 
-		// Object.keys(this.extras).map((key, index) => {
-		// 	// Check extras
-		// 	if(this.extras[key].self){
-		// 		obj[key] = 
-		// 	}
-		// });
-
 
 		// Validate line? 
 		Object.keys(obj).map((key) => {
@@ -487,7 +494,41 @@ class Checker {
 				}
 			}
 		});
-		return dublicates.length > 0 ? true : false;
+
+		let isDublicated = dublicates.length > 0 ? true : false;
+		
+		// Show dublicates
+		this.showDublicates(dublicates, index);
+		return isDublicated;
+	}
+
+	showDublicates(arr, index) {
+		const line = this.selectors.lines.querySelectorAll('.line')[this.currentIndex - 1];
+		
+		let tags = 	[...line.querySelector('.numbers')
+							.querySelectorAll('ul')[index]
+							.querySelectorAll(`input`)
+					];
+
+		let values = [];
+
+		tags.forEach((tag) => {
+			values.push(tag.value);
+			tag.classList.remove('is-dublicated');
+		});
+
+					
+		if( arr.length === 0 ) return false;
+
+		// Current line
+
+		arr.forEach((value) => {
+			let indexes = values.reduce((a, e, i) => (e === value) ? a.concat(i) : a, []);
+
+			indexes.forEach((i) =>{
+				tags[i].classList.add('is-dublicated');
+			});
+		});
 	}
 
 

@@ -9,6 +9,7 @@ function init(){
 	$.init();
 	new Checker({
 		selector: 'checker',
+		
 		views: {
 			id: 'checker-mode',
 			label: 'View mode',
@@ -52,7 +53,8 @@ function init(){
 				label: 'Multiplier',
 				input: 'checkbox',
 				class: 'checker-multiplier',
-				self: false
+				self: false,
+				text: ['Yes', 'No']
 			},
 			raffle: {
 				label: 'Raffle',
@@ -120,7 +122,7 @@ function init(){
 				text: 'Check'
 			}
 		},
-
+		
 		cookies: {
 			main: ['checkingNumbers'],
 			extras: ['checkingPeriods', 'checkingDays'],

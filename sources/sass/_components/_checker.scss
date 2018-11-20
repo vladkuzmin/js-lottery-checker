@@ -38,6 +38,12 @@
 			height: 20px;
 			border: 1px solid rgba($black, .2);
 		}
+		input {
+			&.is-dublicated {
+				transition: background .2s ease-in-out .25s;
+				background: red;
+			}
+		}
 	}
 	.extras {
 		display: flex;
