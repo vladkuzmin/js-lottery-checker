@@ -41,7 +41,7 @@
 		input {
 			&.is-dublicated {
 				transition: background .2s ease-in-out .25s;
-				background: red;
+				background: $red;
 			}
 		}
 	}
@@ -50,6 +50,15 @@
 		label {
 			display: flex;
 			margin: 0 20px 10px 0;
+		}
+		input {
+			transition: all .1s ease-in-out;
+			&.is-valid {
+				background: $green;
+			}
+			&.is-invalid {
+				background: $red;	
+			}
 		}
 	}
 }

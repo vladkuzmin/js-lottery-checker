@@ -9,7 +9,6 @@ function init(){
 	$.init();
 	new Checker({
 		selector: 'checker',
-		
 		views: {
 			id: 'checker-mode',
 			label: 'View mode',

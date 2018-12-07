@@ -24,16 +24,38 @@ class Checker {
 
 		if( this.isExist(opts.cookies)) this.cookieValues = opts.cookies;
 
+		// Are checker buttons available? 
+		// ################################
+		this.availability = this._availability();
+		this.arrAvailability = [];
+
+
 		// Runners
 		this.checkCookies();
 		this.initLines();
 
-		this.build();
 
+		this.build();
 	}
 
 	// Checking if object key is null
 	// -------------------
+	_availability(){
+		let obj = {};
+		obj.result = false;
+		if(this.extras) {
+			Object.keys(this.extras).map((key)=>{
+				if(this.extras[key].self === true){
+					obj[key] = false;
+				}
+			});
+		}
+		return obj;
+	}
+
+	resetAvailability(){
+		let index = this.currentIndex - 1;		
+	}
 
 
 	build(){
@@ -216,8 +238,6 @@ class Checker {
 
 	addLine(){
 		const b = this.balls;
-		const ex = this.extras;
-		
 		let obj = {}
 		
 		// Numbers
@@ -228,15 +248,38 @@ class Checker {
 		});
 
 		// Extras
-		Object.keys(ex).map((key) => {
-			if(ex[key].input === 'checkbox') {
-				obj[key] = false;
-			} else {
-				obj[key] = "";
-			}
-		});
+		if(this.extras) {
+			const ex = this.extras;
+			Object.keys(ex).map((key) => {
+				if(ex[key].input === 'checkbox') {
+					obj[key] = false;
+				} else {
+					obj[key] = "";
+				}
+			});
+		}
 
 		this.lines.push(obj);
+
+		// Reset footer buttons
+		Object.keys(this.availability).map((key)=>{
+			this.availability[key] = false;
+		});
+
+		
+		// Add availability for each line
+		let objAvalability = {};
+		objAvalability.result = false;
+		if(this.extras) {
+			Object.keys(this.extras).map((key)=>{
+				if(this.extras[key].self === true){
+					objAvalability[key] = false;
+				}
+			});
+		}
+		
+		this.arrAvailability.push(objAvalability);
+
 	}
 
 	// ADD LINE
@@ -285,7 +328,7 @@ class Checker {
 								<input type="${e[key].input}" 
 									${e[key].input === 'text' ? 
 										`
-											placeholder="${e[key].format}"
+											placeholder="${e[key].format}" maxlength="${e[key].format.length}"
 										`
 										: ``
 									}
@@ -313,9 +356,9 @@ class Checker {
 
 		// Set current index
 		this.currentIndex += 1;
-		
+
 		// Check if line is valid
-		this.checkLine();
+		this.checkLine(index);
 	}
 
 	checkRemoveButtons(){
@@ -344,7 +387,7 @@ class Checker {
 
 				// add event handler
 				remove.addEventListener('click', () => {
-					this.removeLine(remove, i);
+					this.removeLine(i);
 				});
 			});
 		}
@@ -367,19 +410,80 @@ class Checker {
 		this.fillLine(index, 'insert');
 	}
 
-	updateInputs(line, index){
-		if(this.defaultView === 'inline') {
-			const types = [...line.querySelector('.numbers').querySelectorAll('ul')];
-			types.forEach((item) => {
-				const inputs = [...item.querySelectorAll('input')];
-				inputs.forEach((input) => {
-					input.addEventListener('input', () => {
-						this.fillLine(index, 'reset');
-						this.checkLine();
-					})
+	updateInputs(){
+
+		const lines = this.selectors.lines.querySelectorAll('.line');
+
+		lines.forEach((line, index) => {
+
+			// NUMBERS
+			if(this.defaultView === 'inline') {
+				const types = [...line.querySelector('.numbers').querySelectorAll('ul')];
+				types.forEach((item) => {
+					const inputs = [...item.querySelectorAll('input')];
+					inputs.forEach((input) => {
+						input.addEventListener('input', () => {
+							this.fillLine(index, 'reset');
+							this.checkLine(index);
+						})
+					});
 				});
+			}
+
+			// EXTRAS
+			Object.keys(this.extras).map((key, i) => {
+				let input = line.querySelector(`.${this.extras[key].class} input`);
+				if(input.type === 'checkbox') {
+					input.addEventListener('click', (e)=>{
+						this.lines[index][key] = input.checked === true ? true : false;
+					})
+				} else if (input.type === 'text') {
+					var format = this.extras[key].format;
+					input.addEventListener("input", ()=>{
+
+						this.lines[index][key] = input.value;
+
+						let isValid = false;
+						if(input.value.length === format.length){
+							isValid = this.isFormatValid(input.value, format);
+							if(isValid) {
+								input.classList.add('is-valid');
+								this.availability[key] = true;	
+							} else {
+								input.classList.add('is-invalid');
+								this.availability[key] = false;
+							}
+						}
+						 else {
+						 	input.classList.remove('is-valid', 'is-invalid');
+						 	this.availability[key] = false;
+						 }
+						
+						this.updateFooter();
+					});
+				}
+
 			});
-		}
+
+		});
+
+	}
+
+	isFormatValid(value, format) {
+		value = [...value];
+		format = [...format];
+		let arr = [];
+		
+		value.forEach((value, i)=>{
+
+			if (/^\d$/.test(value)) {
+				arr.push(/^\d$/.test(format[i]) ? true : false)
+			} else {
+				arr.push(/^\d$/.test(format[i]) ? false : true)
+			} 
+		});
+
+		return arr.indexOf(false) === -1 ? true : false;
 	}
 
 	
@@ -388,6 +492,7 @@ class Checker {
 		const mode = this.defaultView;
 		const line = this.selectors.lines.querySelectorAll('.line')[index];
 
+		// BALLS
 		Object.keys(this.balls).map((key, i) => {
 			
 			// Remove all dublicates
@@ -417,6 +522,16 @@ class Checker {
 
 			});
 		});
+
+		// EXTRAS ___CONTINUE___
+		Object.keys(this.extras).map((key, i) => {
+			let input = line.querySelector(`.${this.extras[key].class} input`);
+			if(input.type === 'checkbox') {
+				input.checked = this.lines[index][key];
+			} else if (input.type === 'text') {
+				input.value = this.lines[index][key];
+			}
+		});
 	}
 
 
@@ -426,33 +541,15 @@ class Checker {
 	}
 
 
-	removeLine(item, index) {
-		
+	removeLine(index) {
 		// Remove DOMElement and Object
-		this.selectors.lines.querySelectorAll('.line')[index].remove();
 		this.lines.splice(index, 1);
-
-		// Re-count lines
-		let lines = [...this.selectors.lines.querySelectorAll('.line')]
-
-		// Update data indeces
-		lines.forEach((line, i) => {
-			line.dataset.index = i;
-			// this.updateInputs(line, i);
-		});
-
-		// Update current index
-		this.currentIndex -= 1;
-
-		// Add/hide remove buttons
-		this.checkRemoveButtons();
-		this.checkLine();
-		this.updateGrids();
+		this.view();
 	}
 
-	checkLine(){
+	checkLine(inx){
 
-		const i = this.currentIndex - 1;
+		let i = inx !== undefined ? inx : this.currentIndex - 1;
 
 		const line = this.lines[i];
 
@@ -463,7 +560,7 @@ class Checker {
 		// ---------------------------
 		Object.keys(this.balls).map((key, index) => {
 
-			let isDublicated = this.checkLineDublicates(line.result[key], index);
+			let isDublicated = this.checkLineDublicates(line.result[key], index, i);
 
 			// Check length
 			if(!this.balls[key].optional){
@@ -477,15 +574,17 @@ class Checker {
 
 		obj.result = tempArr.every((val, i, arr) => val === true );
 
-
 		// Validate line? 
 		Object.keys(obj).map((key) => {
- 			this.updateFooter(obj[key] ? true : false);
+			this.availability[key] = obj[key] ? true : false;
+ 			this.updateFooter();
 			return;
 		});
+
+		this.arrAvailability[inx].result = obj.result;
 	}
 
-	checkLineDublicates(arr, index) {
+	checkLineDublicates(arr, index, line) {
 		let dublicates = [];
 		arr.forEach((value, i) => {
 			if(arr.indexOf(value, i + 1) > -1) {	
@@ -498,13 +597,15 @@ class Checker {
 		let isDublicated = dublicates.length > 0 ? true : false;
 		
 		// Show dublicates
-		this.showDublicates(dublicates, index);
+		this.showDublicates(dublicates, index, line);
+
 		return isDublicated;
 	}
 
-	showDublicates(arr, index) {
-		const line = this.selectors.lines.querySelectorAll('.line')[this.currentIndex - 1];
-		
+	showDublicates(arr, index, line) {
+
+		line = this.selectors.lines.querySelectorAll('.line')[line];
+
 		let tags = 	[...line.querySelector('.numbers')
 							.querySelectorAll('ul')[index]
 							.querySelectorAll(`input`)
@@ -529,6 +630,7 @@ class Checker {
 				tags[i].classList.add('is-dublicated');
 			});
 		});
+
 	}
 
 
@@ -644,7 +746,6 @@ class Checker {
 					}
 				}
 
-				
 				let nums = [...grids[index].querySelectorAll('li')];
 				
 				nums.forEach((num) => {
@@ -690,15 +791,27 @@ class Checker {
 		if(!isChecked) {
 			this.lines[i].result[Object.keys(this.lines[i].result)[type]] = [];
 			this.updateGrids();
-			this.fillLine(i, 'insert');
+			// this.fillLine(i, 'insert');
 		}
 	}
 
 
 	// FOOTER
 	// --------------------
-	updateFooter(boolean){
+	updateFooter(){
 		const s = this.selectors;
+		let boolean = false;
+		let arr = [];
+
+		Object.keys(this.availability).map((key) => {
+			arr.push(this.availability[key]);
+		});
+
+		
+		if(arr.indexOf(true) !== -1 ) {
+			boolean = true;
+		}
+
 		s.add.disabled = boolean ? false : true;
 		s.submit.disabled = boolean ? false : true;
 	}
