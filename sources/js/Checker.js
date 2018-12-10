@@ -279,6 +279,7 @@ class Checker {
 		}
 		
 		this.arrAvailability.push(objAvalability);
+		console.log(this.arrAvailability);
 
 	}
 
@@ -448,15 +449,18 @@ class Checker {
 							isValid = this.isFormatValid(input.value, format);
 							if(isValid) {
 								input.classList.add('is-valid');
-								this.availability[key] = true;	
+								this.availability[key] = true;
+								this.arrAvailability[index][key]= true;
 							} else {
 								input.classList.add('is-invalid');
 								this.availability[key] = false;
+								this.arrAvailability[index][key]= false;
 							}
 						}
 						 else {
 						 	input.classList.remove('is-valid', 'is-invalid');
 						 	this.availability[key] = false;
+						 	this.arrAvailability[index][key]= false;
 						 }
 						
 						this.updateFooter();
@@ -515,7 +519,14 @@ class Checker {
 					tag[mode === 'inline' ? 'value' : 'innerHTML'] = value !== undefined ? value : ``;
 				} else {
 					value = tag[mode === 'inline' ? 'value' : 'innerHTML'];
-					if( value !== "") {
+					let max = Math.round(tag.getAttribute("max"));
+					let min = Math.round(tag.getAttribute("min"));
+
+					if(value < min || value > max) {
+						value = "";
+						tag.value = "";
+					}
+					if( value !== "" ) {
 						this.lines[index].result[key].push(value);
 					}
 				}
@@ -523,7 +534,7 @@ class Checker {
 			});
 		});
 
-		// EXTRAS ___CONTINUE___
+		// EXTRAS
 		Object.keys(this.extras).map((key, i) => {
 			let input = line.querySelector(`.${this.extras[key].class} input`);
 			if(input.type === 'checkbox') {
@@ -544,6 +555,7 @@ class Checker {
 	removeLine(index) {
 		// Remove DOMElement and Object
 		this.lines.splice(index, 1);
+		this.arrAvailability.splice(index, 1);
 		this.view();
 	}
 
@@ -577,11 +589,13 @@ class Checker {
 		// Validate line? 
 		Object.keys(obj).map((key) => {
 			this.availability[key] = obj[key] ? true : false;
- 			this.updateFooter();
+ 			
 			return;
 		});
 
-		this.arrAvailability[inx].result = obj.result;
+		this.arrAvailability[i].result = obj.result;
+		this.updateFooter();
+
 	}
 
 	checkLineDublicates(arr, index, line) {
@@ -617,7 +631,6 @@ class Checker {
 			values.push(tag.value);
 			tag.classList.remove('is-dublicated');
 		});
-
 					
 		if( arr.length === 0 ) return false;
 
@@ -800,20 +813,20 @@ class Checker {
 	// --------------------
 	updateFooter(){
 		const s = this.selectors;
-		let boolean = false;
+		let isValid = false;
 		let arr = [];
 
-		Object.keys(this.availability).map((key) => {
-			arr.push(this.availability[key]);
+		this.arrAvailability.forEach((line)=>{
+			Object.keys(line).map((key)=>{
+				if(line[key] === true){
+					isValid = true;
+					return false;
+				}
+			});
 		});
 
-		
-		if(arr.indexOf(true) !== -1 ) {
-			boolean = true;
-		}
-
-		s.add.disabled = boolean ? false : true;
-		s.submit.disabled = boolean ? false : true;
+		s.add.disabled = isValid ? false : true;
+		s.submit.disabled = isValid ? false : true;
 	}
 
 
